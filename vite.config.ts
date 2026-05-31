@@ -10,10 +10,18 @@ export default defineConfig({
     host: "0.0.0.0",
     port: devPort,
     strictPort: true,
+    allowedHosts: [
+      "e9fed06a27e265fa7f1d-pod-rfqze6tr3jft5c636dsslnv2qa-5173.us5.cursorvm.com",
+      ".cursorvm.com",
+    ],
   },
   preview: {
     host: "0.0.0.0",
     port: previewPort,
     strictPort: true,
+    allowedHosts: [
+      "e9fed06a27e265fa7f1d-pod-rfqze6tr3jft5c636dsslnv2qa-5173.us5.cursorvm.com",
+      ".cursorvm.com",
+    ],
   },
 });
