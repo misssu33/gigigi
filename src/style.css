@@ -143,11 +143,61 @@ body {
 .frame-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   padding: 0.4rem 0.5rem;
   border-radius: 0.75rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.frame-item.dragging {
+  opacity: 0.55;
+}
+
+.frame-item.drop-target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+  letter-spacing: -0.15em;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.frame-reorder {
+  display: flex;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 860px) {
+  .frame-reorder {
+    display: none;
+  }
+
+  .drag-handle {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 859px) {
+  .drag-handle {
+    display: none;
+  }
+
+  .frame-reorder .btn.icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.1rem;
+  }
 }
 
 .frame-item img {

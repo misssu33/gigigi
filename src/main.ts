@@ -112,15 +112,50 @@ function showPreview(url: string) {
   downloadLink.hidden = false;
 }
 
+function moveFrame(from: number, to: number) {
+  if (from === to || from < 0 || to < 0 || from >= frames.length || to >= frames.length) {
+    return;
+  }
+  const [item] = frames.splice(from, 1);
+  frames.splice(to, 0, item);
+  renderFrames();
+  setStatus(`순서 변경됨 · 총 ${frames.length}프레임`);
+}
+
 function renderFrames() {
   frameList.innerHTML = "";
   frames.forEach((frame, index) => {
     const li = document.createElement("li");
     li.className = "frame-item";
+    const isFirst = index === 0;
+    const isLast = index === frames.length - 1;
     li.innerHTML = `
+      <button
+        type="button"
+        class="btn icon drag-handle"
+        draggable="true"
+        data-index="${index}"
+        aria-label="프레임 ${index + 1} 끌어서 이동"
+      >⋮⋮</button>
       <img src="${frame.previewUrl}" alt="프레임 ${index + 1}" width="72" height="72" />
       <span class="frame-label">#${index + 1} ${frame.file.name}</span>
-      <button type="button" class="btn icon" data-index="${index}" aria-label="프레임 ${index + 1} 삭제">×</button>
+      <div class="frame-reorder" role="group" aria-label="프레임 ${index + 1} 순서 변경">
+        <button
+          type="button"
+          class="btn icon move-up"
+          data-index="${index}"
+          aria-label="프레임 ${index + 1} 위로"
+          ${isFirst ? "disabled" : ""}
+        >↑</button>
+        <button
+          type="button"
+          class="btn icon move-down"
+          data-index="${index}"
+          aria-label="프레임 ${index + 1} 아래로"
+          ${isLast ? "disabled" : ""}
+        >↓</button>
+      </div>
+      <button type="button" class="btn icon remove-frame" data-index="${index}" aria-label="프레임 ${index + 1} 삭제">×</button>
     `;
     frameList.appendChild(li);
   });
@@ -197,12 +232,77 @@ dropzone.addEventListener("drop", (e) => {
   if (dragEvent.dataTransfer?.files) addFiles(dragEvent.dataTransfer.files);
 });
 
+let dragFromIndex: number | null = null;
+
+frameList.addEventListener("dragstart", (e) => {
+  const dragEvent = e as DragEvent;
+  const handle = (dragEvent.target as HTMLElement).closest<HTMLButtonElement>(".drag-handle");
+  if (!handle) {
+    dragEvent.preventDefault();
+    return;
+  }
+
+  dragFromIndex = Number(handle.dataset.index);
+  dragEvent.dataTransfer?.setData("text/plain", String(dragFromIndex));
+  if (dragEvent.dataTransfer) dragEvent.dataTransfer.effectAllowed = "move";
+  handle.closest(".frame-item")?.classList.add("dragging");
+});
+
+frameList.addEventListener("dragend", () => {
+  dragFromIndex = null;
+  frameList.querySelectorAll(".frame-item").forEach((el) => {
+    el.classList.remove("dragging", "drop-target");
+  });
+});
+
+frameList.addEventListener("dragover", (e) => {
+  const dragEvent = e as DragEvent;
+  if (dragFromIndex === null) return;
+  const item = (dragEvent.target as HTMLElement).closest(".frame-item");
+  if (!item) return;
+
+  dragEvent.preventDefault();
+  if (dragEvent.dataTransfer) dragEvent.dataTransfer.dropEffect = "move";
+  frameList.querySelectorAll(".drop-target").forEach((el) => el.classList.remove("drop-target"));
+  item.classList.add("drop-target");
+});
+
+frameList.addEventListener("dragleave", (e) => {
+  const item = (e.target as HTMLElement).closest(".frame-item");
+  if (!item) return;
+  const related = (e as DragEvent).relatedTarget as Node | null;
+  if (related && item.contains(related)) return;
+  item.classList.remove("drop-target");
+});
+
+frameList.addEventListener("drop", (e) => {
+  e.preventDefault();
+  const item = (e.target as HTMLElement).closest(".frame-item");
+  if (!item || dragFromIndex === null) return;
+
+  const toIndex = Array.from(frameList.children).indexOf(item);
+  frameList.querySelectorAll(".drop-target").forEach((el) => el.classList.remove("drop-target"));
+  if (toIndex >= 0) moveFrame(dragFromIndex, toIndex);
+  dragFromIndex = null;
+});
+
 frameList.addEventListener("click", (e) => {
   const target = e.target as HTMLElement;
   const btn = target.closest<HTMLButtonElement>("button[data-index]");
   if (!btn) return;
 
   const index = Number(btn.dataset.index);
+
+  if (btn.classList.contains("move-up")) {
+    moveFrame(index, index - 1);
+    return;
+  }
+  if (btn.classList.contains("move-down")) {
+    moveFrame(index, index + 1);
+    return;
+  }
+  if (!btn.classList.contains("remove-frame")) return;
+
   const [removed] = frames.splice(index, 1);
   if (removed) URL.revokeObjectURL(removed.previewUrl);
   renderFrames();
