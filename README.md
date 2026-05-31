@@ -1,36 +1,58 @@
 # gigigi
 
-**gifffff** — 브라우저에서 이미지를 GIF로 만드는 작은 웹 앱입니다.
+브라우저에서 **이미지 1~10장**을 올려 **GIF**를 만드는 모바일 우선 웹 앱입니다.
+
+## 기술 스택
+
+- Vite + React + TypeScript
+- CSS only
+- [gifenc](https://github.com/mattdesl/gifenc) (브라우저 인코딩)
+- 백엔드 없음
 
 ## 기능
 
-- 여러 장의 이미지를 드래그 앤 드롭 또는 파일 선택으로 업로드
-- 프레임 간격·최대 변 크기 조절 후 GIF 생성
-- 생성 결과 미리보기 및 다운로드
-- 외부 GIF URL 미리보기
+1. 이미지 여러 장 업로드 (최대 10장)
+2. 선택한 프레임 미리보기
+3. 프레임 간격(ms) · 최대 너비(px) 설정
+4. 브라우저에서 GIF 생성
+5. 미리보기 및 다운로드
 
-모든 처리는 **클라이언트(브라우저)** 에서만 이루어지며, 파일은 서버로 전송되지 않습니다.
-
-## 로컬 실행
+## 실행 방법
 
 ```bash
+# 루트 gigigi 앱
 npm install
 npm run dev
 ```
 
-빌드:
+브라우저: **http://localhost:5173/**
+
+## 빌드
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## 기술 스택
+## MotionDot (별도 앱)
 
-- [Vite](https://vitejs.dev/)
-- TypeScript
-- [gifenc](https://github.com/mattdesl/gifenc) — 브라우저 GIF 인코딩
+`/motiondot` 폴더에 별도 Vite 앱이 있습니다 (포트 **5174**).
 
-## 라이선스
+```bash
+cd motiondot
+npm install
+npm run dev
+```
 
-MIT
+## 파일 구조
+
+```
+src/
+  main.tsx   — React 엔트리
+  App.tsx    — UI
+  App.css    — 스타일
+  gif.ts     — GIF 인코딩
+  gifenc.d.ts
+```
+
+자세한 계획은 `FILE_PLAN.md` 참고.
