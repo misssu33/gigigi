@@ -140,6 +140,11 @@ body {
   overflow: auto;
 }
 
+.frame-list.is-reordering {
+  touch-action: none;
+  user-select: none;
+}
+
 .frame-item {
   display: flex;
   align-items: center;
@@ -166,38 +171,12 @@ body {
   letter-spacing: -0.15em;
   font-size: 0.85rem;
   flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
 }
 
 .drag-handle:active {
   cursor: grabbing;
-}
-
-.frame-reorder {
-  display: flex;
-  gap: 0.2rem;
-  flex-shrink: 0;
-}
-
-@media (min-width: 860px) {
-  .frame-reorder {
-    display: none;
-  }
-
-  .drag-handle {
-    display: inline-flex;
-  }
-}
-
-@media (max-width: 859px) {
-  .drag-handle {
-    display: none;
-  }
-
-  .frame-reorder .btn.icon {
-    width: 2.75rem;
-    height: 2.75rem;
-    font-size: 1.1rem;
-  }
 }
 
 .frame-item img {
@@ -205,6 +184,9 @@ body {
   height: 48px;
   object-fit: cover;
   border-radius: 0.5rem;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 .frame-label {

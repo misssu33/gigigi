@@ -24,7 +24,7 @@ app.innerHTML = `
 
       <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="이미지 업로드">
         <p class="dropzone-title">이미지를 끌어다 놓거나 클릭하세요</p>
-        <p class="dropzone-hint">PNG · JPG · WebP · 여러 장 가능</p>
+        <p class="dropzone-hint">PNG · JPG · WebP · 여러 장 · ⋮⋮ 로 순서 변경</p>
         <input type="file" id="file-input" accept="image/*" multiple hidden />
       </div>
 
@@ -127,34 +127,16 @@ function renderFrames() {
   frames.forEach((frame, index) => {
     const li = document.createElement("li");
     li.className = "frame-item";
-    const isFirst = index === 0;
-    const isLast = index === frames.length - 1;
+    li.dataset.index = String(index);
     li.innerHTML = `
       <button
         type="button"
         class="btn icon drag-handle"
-        draggable="true"
         data-index="${index}"
         aria-label="프레임 ${index + 1} 끌어서 이동"
       >⋮⋮</button>
-      <img src="${frame.previewUrl}" alt="프레임 ${index + 1}" width="72" height="72" />
+      <img src="${frame.previewUrl}" alt="프레임 ${index + 1}" width="72" height="72" draggable="false" />
       <span class="frame-label">#${index + 1} ${frame.file.name}</span>
-      <div class="frame-reorder" role="group" aria-label="프레임 ${index + 1} 순서 변경">
-        <button
-          type="button"
-          class="btn icon move-up"
-          data-index="${index}"
-          aria-label="프레임 ${index + 1} 위로"
-          ${isFirst ? "disabled" : ""}
-        >↑</button>
-        <button
-          type="button"
-          class="btn icon move-down"
-          data-index="${index}"
-          aria-label="프레임 ${index + 1} 아래로"
-          ${isLast ? "disabled" : ""}
-        >↓</button>
-      </div>
       <button type="button" class="btn icon remove-frame" data-index="${index}" aria-label="프레임 ${index + 1} 삭제">×</button>
     `;
     frameList.appendChild(li);
@@ -232,77 +214,76 @@ dropzone.addEventListener("drop", (e) => {
   if (dragEvent.dataTransfer?.files) addFiles(dragEvent.dataTransfer.files);
 });
 
-let dragFromIndex: number | null = null;
+let reorderFromIndex: number | null = null;
+let reorderPointerId: number | null = null;
 
-frameList.addEventListener("dragstart", (e) => {
-  const dragEvent = e as DragEvent;
-  const handle = (dragEvent.target as HTMLElement).closest<HTMLButtonElement>(".drag-handle");
-  if (!handle) {
-    dragEvent.preventDefault();
-    return;
-  }
-
-  dragFromIndex = Number(handle.dataset.index);
-  dragEvent.dataTransfer?.setData("text/plain", String(dragFromIndex));
-  if (dragEvent.dataTransfer) dragEvent.dataTransfer.effectAllowed = "move";
-  handle.closest(".frame-item")?.classList.add("dragging");
-});
-
-frameList.addEventListener("dragend", () => {
-  dragFromIndex = null;
+function clearReorderHighlight() {
   frameList.querySelectorAll(".frame-item").forEach((el) => {
     el.classList.remove("dragging", "drop-target");
   });
-});
+}
 
-frameList.addEventListener("dragover", (e) => {
-  const dragEvent = e as DragEvent;
-  if (dragFromIndex === null) return;
-  const item = (dragEvent.target as HTMLElement).closest(".frame-item");
-  if (!item) return;
-
-  dragEvent.preventDefault();
-  if (dragEvent.dataTransfer) dragEvent.dataTransfer.dropEffect = "move";
+function highlightDropTarget(clientX: number, clientY: number) {
   frameList.querySelectorAll(".drop-target").forEach((el) => el.classList.remove("drop-target"));
-  item.classList.add("drop-target");
+  const hit = document.elementFromPoint(clientX, clientY)?.closest(".frame-item");
+  hit?.classList.add("drop-target");
+  return hit;
+}
+
+function finishReorder(clientX: number, clientY: number) {
+  if (reorderFromIndex === null) return;
+
+  const target = highlightDropTarget(clientX, clientY);
+  const toIndex = target ? Array.from(frameList.children).indexOf(target) : -1;
+  clearReorderHighlight();
+
+  if (toIndex >= 0) moveFrame(reorderFromIndex, toIndex);
+  reorderFromIndex = null;
+  reorderPointerId = null;
+}
+
+frameList.addEventListener("pointerdown", (e) => {
+  const pointerEvent = e as PointerEvent;
+  const target = pointerEvent.target;
+  if (!(target instanceof Element)) return;
+  const handle = target.closest<HTMLButtonElement>(".drag-handle");
+  if (!handle) return;
+
+  pointerEvent.preventDefault();
+  reorderFromIndex = Number(handle.dataset.index);
+  reorderPointerId = pointerEvent.pointerId;
+  handle.setPointerCapture(pointerEvent.pointerId);
+  handle.closest(".frame-item")?.classList.add("dragging");
+  frameList.classList.add("is-reordering");
 });
 
-frameList.addEventListener("dragleave", (e) => {
-  const item = (e.target as HTMLElement).closest(".frame-item");
-  if (!item) return;
-  const related = (e as DragEvent).relatedTarget as Node | null;
-  if (related && item.contains(related)) return;
-  item.classList.remove("drop-target");
+frameList.addEventListener("pointermove", (e) => {
+  const pointerEvent = e as PointerEvent;
+  if (reorderPointerId === null || pointerEvent.pointerId !== reorderPointerId) return;
+  highlightDropTarget(pointerEvent.clientX, pointerEvent.clientY);
 });
 
-frameList.addEventListener("drop", (e) => {
-  e.preventDefault();
-  const item = (e.target as HTMLElement).closest(".frame-item");
-  if (!item || dragFromIndex === null) return;
+frameList.addEventListener("pointerup", (e) => {
+  const pointerEvent = e as PointerEvent;
+  if (reorderPointerId === null || pointerEvent.pointerId !== reorderPointerId) return;
+  finishReorder(pointerEvent.clientX, pointerEvent.clientY);
+  frameList.classList.remove("is-reordering");
+});
 
-  const toIndex = Array.from(frameList.children).indexOf(item);
-  frameList.querySelectorAll(".drop-target").forEach((el) => el.classList.remove("drop-target"));
-  if (toIndex >= 0) moveFrame(dragFromIndex, toIndex);
-  dragFromIndex = null;
+frameList.addEventListener("pointercancel", (e) => {
+  const pointerEvent = e as PointerEvent;
+  if (reorderPointerId === null || pointerEvent.pointerId !== reorderPointerId) return;
+  clearReorderHighlight();
+  reorderFromIndex = null;
+  reorderPointerId = null;
+  frameList.classList.remove("is-reordering");
 });
 
 frameList.addEventListener("click", (e) => {
-  const target = e.target as HTMLElement;
-  const btn = target.closest<HTMLButtonElement>("button[data-index]");
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".remove-frame");
   if (!btn) return;
 
   const index = Number(btn.dataset.index);
-
-  if (btn.classList.contains("move-up")) {
-    moveFrame(index, index - 1);
-    return;
-  }
-  if (btn.classList.contains("move-down")) {
-    moveFrame(index, index + 1);
-    return;
-  }
-  if (!btn.classList.contains("remove-frame")) return;
-
   const [removed] = frames.splice(index, 1);
   if (removed) URL.revokeObjectURL(removed.previewUrl);
   renderFrames();
