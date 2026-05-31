@@ -5,9 +5,9 @@
   "type": "module",
   "description": "gifffff — 브라우저에서 만드는 GIF 놀이터",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "tsc && vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0 --port 4173"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
