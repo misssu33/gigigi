@@ -1,0 +1,19 @@
+{
+  "name": "gigigi",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "gifffff — 브라우저에서 만드는 GIF 놀이터",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "gifenc": "^1.0.3"
+  }
+}
