@@ -29,12 +29,15 @@ export default function App() {
     setGifUrl(null);
   }, []);
 
+  const framesRef = useRef(frames);
+  framesRef.current = frames;
+
   useEffect(() => {
     return () => {
-      frames.forEach((f) => URL.revokeObjectURL(f.previewUrl));
+      framesRef.current.forEach((f) => URL.revokeObjectURL(f.previewUrl));
       if (gifUrlRef.current) URL.revokeObjectURL(gifUrlRef.current);
     };
-  }, [frames]);
+  }, []);
 
   const addFiles = (list: FileList | File[]) => {
     const images = Array.from(list).filter((f) => f.type.startsWith("image/"));
